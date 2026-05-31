@@ -1,11 +1,15 @@
 import { Colors } from '@/styles/colors'
 import { Coordinate, Direction, GestureEventType } from '@/types/types'
 import React, { useEffect, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 import { PanGestureHandler } from 'react-native-gesture-handler'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Snake from './Snake'
 import checkGameOver from '@/utils/checkGameOver'
+import Food from './Food'
+import checkEatFood from '@/utils/checkEatFood'
+import randomFoodPosition from '@/utils/randomFoodPosition'
+import Header from './Header'
 
 const SNAKE_INITIAL_POSITION = [{ x: 5, y: 5 }]; // here we create array of positions because we need to track each part of snake
 const FOOD_INITIAL_POSITION = { x: 5, y: 20 };
@@ -21,6 +25,7 @@ const game = () => {
 
   const [isGameOver, setIsGameOver] = useState<boolean>(false)
   const [isPaused, setIsPaused] = useState<boolean>(false)
+  const [score, setScore] = useState<number>(0)
 
   useEffect(() => {
     if (!isGameOver) {
@@ -87,15 +92,52 @@ const game = () => {
         break;
     }
 
-    setSnake([newHead, ...snake.slice(0, -1)]) /// this will just update snakeHead and keep others as it is. ...snake accounts for remaining parts of snake
+    // eat food and grow snake
+    if (checkEatFood(newHead, food, 2)) {
+      setFood(randomFoodPosition(GAME_BOUNDS.xMax, GAME_BOUNDS.yMax))
+      setSnake([newHead, ...snake])
+      setScore((prev) => prev + SCORE_INCREAMENT)
+    } else {
+      setSnake([newHead, ...snake.slice(0, -1)]) /// this will just update snakeHead and keep others as it is. ...snake accounts for remaining parts of snake
+
+    }
+
+
+
+
+
   }
+
+  const pauseGame = () => {
+    setIsPaused((prev) => !prev)
+  }
+
+  const reloadGame = () => {
+    setSnake(SNAKE_INITIAL_POSITION)
+    setFood(FOOD_INITIAL_POSITION)
+    setIsGameOver(false)
+    setIsPaused(false)
+    setScore(0)
+    setDirection(Direction.Right)
+  }
+
 
   return (
 
     <PanGestureHandler onGestureEvent={handleGesture}>
       <SafeAreaView style={styles.container}>
+        <Header
+          isPaused={isPaused}
+          pauseGame={pauseGame}
+          reloadGame={reloadGame}
+        >
+          <Text>
+            {score}
+          </Text>
+          </Header>
         <View style={styles.boundaries}>
           <Snake snake={snake} />
+          <Food x={food.x} y={food.y} />
         </View>
       </SafeAreaView>
     </PanGestureHandler>
